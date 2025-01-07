@@ -1,22 +1,15 @@
 import React from "react";
-import Header from "./Header";
+import "../styles/Layout.css";
+import HeaderNavBar from "./HeaderNavBar";
 import Footer from "./Footer";
-import Loader from "./Loader"
 
-function Layout(props) {
-    return (
-        <div>
-            
-            {props.loading && (<Loader />)}
-
-            <Header />
-            <div className="content">
-                {props.children}
-            </div>
-            <Footer />
-
-        </div>
-    )
+function Layout({ children, loading }) {
+  return (
+    <div className="layout">
+      <div className="content">{loading ? <div className="loader">Loading...</div> : children}</div>
+      <Footer />
+    </div>
+  );
 }
 
-export default Layout
+export default Layout;

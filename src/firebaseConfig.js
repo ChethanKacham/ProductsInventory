@@ -9,12 +9,12 @@ import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCqg-22Oo2js7Dj6_zYwZFG6_ZgYOm6GsA",
-  authDomain: "productsinventory-fedcapstone.firebaseapp.com",
-  projectId: "productsinventory-fedcapstone",
-  storageBucket: "productsinventory-fedcapstone.firebasestorage.app",
-  messagingSenderId: "450693775318",
-  appId: "1:450693775318:web:b31b8bc1e7b95a9221ae77"
+  apiKey: "your-api-key",
+  authDomain: "your-auth-domain",
+  projectId: "your-project-id",
+  storageBucket: "your-storage-bucket",
+  messagingSenderId: "your-messaging-sender-id",
+  appId: "your-app-id"
 };
 
 // Initialize Firebase

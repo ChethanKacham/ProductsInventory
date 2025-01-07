@@ -1,424 +1,252 @@
-import React, { useEffect, useState } from "react";
-import {
-    collection,
-    addDoc,
-    getDocs,
-    setDoc,
-    doc,
-    deleteDoc,
-} from "firebase/firestore";
-import { fireDB, auth } from "../firebaseConfig";
-import Layout from "../components/Layout";
-import { Table, Button } from "react-bootstrap";
-import { Modal, Tabs, Tab } from "react-bootstrap";
-import { toast } from "react-toastify";
-import {
-    Form,
-    Formik,
-    ErrorMessage,
-} from "formik";
-import  FormGroup  from '@mui/material/FormGroup';
-import FormControl from '@mui/material/FormControl';
-import FormLabel from '@mui/material/FormLabel';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import * as Yup from "yup";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { fireDB } from "../firebaseConfig";
+import "../styles/InventoryManagement.css";
+import Loader from "./Loader";
 
 function InventoryManagement() {
-    const navigate = useNavigate();
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [searchKey, setSearchKey] = useState("");
-    const [filterType, setFilterType] = useState("");
-    const [product, setProduct] = useState({
-        name: "",
-        description: "",
-        manufacturer: "",
-        price: "",
-        imageURL: "",
-        category: "",
-        quantity: "",
-    });
-    const [add, setAdd] = useState(false);
-    const [show, setShow] = useState(false);
-    const [errMsg, setErrMsg] = useState("");
-    const validationSchema = Yup.object({
-        name: Yup.string().required("Required"),
-        description: Yup.string().required("Required").min(8, "Minimum 8 characters"),
-        manufacturer: Yup.string().required("Required"),
-        price: Yup.number().required("Required"),
-        quantity: Yup.number().required("Required"),
-        category: Yup.string().required("Required"),
-    });
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
+  const [formValues, setFormValues] = useState({
+    name: "",
+    price: "",
+    description: "",
+    category: "",
+    quantity: "",
+    manufacturer: "",
+    imageURL: "",
+  });
 
-    useEffect(() => {
-        getData();
-    }, []);
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
-    async function getData() {
-        try {
-            setLoading(true);
-            const products1 = await getDocs(collection(fireDB, "products"));
-            const productsArray = [];
-            products1.forEach((doc) => {
-                const obj = {
-                    id: doc.id,
-                    ...doc.data(),
-                };
-                productsArray.push(obj);
-            });
-            setProducts(productsArray);
-            setLoading(false);
-        } catch (error) {
-            console.log(error);
-            setLoading(false);
-        }
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const querySnapshot = await getDocs(collection(fireDB, "products"));
+      const productsArray = [];
+      querySnapshot.forEach((doc) => {
+        productsArray.push({ id: doc.id, ...doc.data() });
+      });
+      setProducts(productsArray);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setLoading(false);
     }
+  };
 
-    const handleClose = () => {
-        setShow(false);
-        setAdd(false);
-        setProduct({
-            name: "",
-            description: "",
-            manufacturer: "",
-            price: "",
-            quantity: "",
-            imageURL: "",
-            category: "",
-        });
-    };
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormValues({ ...formValues, [name]: value });
+  };
 
-    const handleShow = () => setShow(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      if (editProduct) {
+        const productRef = doc(fireDB, "products", editProduct.id);
+        await updateDoc(productRef, formValues);
+      } else {
+        await addDoc(collection(fireDB, "products"), formValues);
+      }
+      fetchProducts();
+      resetForm();
+      setShowModal(false);
+    } catch (error) {
+      console.error("Error saving product:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const isValidate = () => {
-        let isValid = true;
-        if (!product.name) {
-            alert("Name is Required");
-            isValid = false;
-        } else if (!product.description) {
-            alert("Description is Required");
-            isValid = false;
-        } else if (!product.manufacturer) {
-            alert("Manufacturer is Required");
-            isValid = false;
-        } else if (!product.price) {
-            setErrMsg("Price is Required");
-            isValid = false;
-        } else if (!product.quantity) {
-            alert("Quantity is Required");
-            isValid = false;
-        } else if (!product.imageURL) {
-            alert("Image URL is Required");
-            isValid = false;
-        } else if (!product.category) {
-            alert("Category is Required");
-            isValid = false;
-        }
+  const handleEdit = (product) => {
+    setEditProduct(product);
+    setFormValues(product);
+    setShowModal(true);
+  };
 
-        return isValid;
-    };
+  const handleDelete = async (id) => {
+    const confirmed = window.confirm("Are you sure you want to delete this product?");
+    if (confirmed) {
+      try {
+        setLoading(true);
+        await deleteDoc(doc(fireDB, "products", id));
+        fetchProducts();
+      } catch (error) {
+        console.error("Error deleting product:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
-    const addHandler = () => {
-        setAdd(true);
-        handleShow();
-    };
+  const resetForm = () => {
+    setEditProduct(null);
+    setFormValues({
+      name: "",
+      price: "",
+      description: "",
+      category: "",
+      quantity: "",
+      manufacturer: "",
+      imageURL: "",
+    });
+  };
 
-    const addProduct = async () => {
-        if (isValidate()) {
-            let addp = window.confirm("Are you sure to add the product?");
-            if (addp) {
-                try {
-                    setLoading(true);
-                    await addDoc(collection(fireDB, "products"), product);
-                    // handleClose();
-                    toast.success("Product added successfully");
-                    window.location.reload();
-                } catch (error) {
-                    toast.error("Product add failed");
-                    setLoading(false);
-                }
-            }
-        }
-    };
+  return (
+    <div className="inventory-management">
+      <h2 className="title">Inventory Management</h2>
+      <button className="btn-add" onClick={() => setShowModal(true)}>
+        Add Product
+      </button>
 
-    const editHandler = (product1) => {
-        setProduct(product1);
-        setShow(true);
-    };
+      {loading ? (
+        <Loader />
+      ) : (
+        <div className="product-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Manufacturer</th>
+                <th>Description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr key={product.id}>
+                  <td>{product.name}</td>
+                  <td>₹{product.price}</td>
+                  <td>{product.category}</td>
+                  <td>{product.quantity}</td>
+                  <td>{product.manufacturer}</td>
+                  <td>{product.description}</td>
+                  <td>
+                    <button onClick={() => handleEdit(product)} className="btn-edit">
+                      Edit
+                    </button>
+                    <button onClick={() => handleDelete(product.id)} className="btn-delete">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-    const updateProduct = async () => {
-        if (isValidate()) {
-            let update = window.confirm("Are you sure to update the product?");
-            if (update) {
-                try {
-                    setLoading(true);
-                    await setDoc(doc(fireDB, "products", product.id), product);
-                    // handleClose();
-                    toast.success("Product updated successfully");
-                    window.location.reload();
-                } catch (error) {
-                    toast.error("Product update failed");
-                }
-                setLoading(false);
-            }
-        }
-    };
-
-    const deleteProduct = async (product1) => {
-        let deletep = window.confirm("Are you sure to delete the product?");
-        if (deletep) {
-            try {
-                setLoading(true);
-                await deleteDoc(doc(fireDB, "products", product1.id));
-                toast.success("Product deleted successfully");
-                getData();
-            } catch (error) {
-                toast.failed("Product delete failed");
-            }
-            setLoading(false);
-        }
-    };
-
-    const [customization, setCustomization] = useState(false);
-    const [flagImage, setFlagImage] = useState(true);
-    const [flagPrice, setFlagPrice] = useState(true);
-    const [flagManufacturer, setFlagManufacturer] = useState(true);
-    const [flagQuantity, setFlagQuantity] = useState(true);
-
-    const handleFlagImage = () => setFlagImage(!flagImage);
-    const handleFlagPrice = () => setFlagPrice(!flagPrice);
-    const handleFlagManufacturer = () => setFlagManufacturer(!flagManufacturer);
-    const handleCustomization = () => setCustomization(!customization);
-    const handleFlagQuantity = () => setFlagQuantity(!flagQuantity);
-
-    return (
-        <Layout loading={loading}>
-            <h3 align="center">Product Inventory Management</h3>
-            <br />
-            <div className="btn-toolbar justify-content-between">
-                <button onClick={addHandler}>Add Product</button>
-                <button onClick={() => navigate("/chart")}>Chart</button>
-                <button onClick={handleCustomization}>Customization</button>
-            </div>
-            <div className="d-flex align-items-center my-3 justify-content-center">
-                <label className="mt-3">Search</label>
+      {showModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>{editProduct ? "Edit Product" : "Add Product"}</h2>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label htmlFor="name">Name:</label>
                 <input
-                    value={searchKey}
-                    onChange={(e) => setSearchKey(e.target.value)}
-                    className="form-control mx-2"
-                    placeholder="Search"
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formValues.name}
+                  onChange={handleInputChange}
+                  required
                 />
-                <label className="mt-3">Category</label>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                <select
-                    className="form-control mt-3"
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
+              </div>
+              <div className="form-group">
+                <label htmlFor="price">Price:</label>
+                <input
+                  type="number"
+                  id="price"
+                  name="price"
+                  value={formValues.price}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="description">Description:</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={formValues.description}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="category">Category:</label>
+                <input
+                  type="text"
+                  id="category"
+                  name="category"
+                  value={formValues.category}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="quantity">Quantity:</label>
+                <input
+                  type="number"
+                  id="quantity"
+                  name="quantity"
+                  value={formValues.quantity}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="manufacturer">Manufacturer:</label>
+                <input
+                  type="text"
+                  id="manufacturer"
+                  name="manufacturer"
+                  value={formValues.manufacturer}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="imageURL">Image URL:</label>
+                <input
+                  type="text"
+                  id="imageURL"
+                  name="imageURL"
+                  value={formValues.imageURL}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-buttons">
+                <button type="submit" className="btn-submit">
+                  {editProduct ? "Update" : "Add"}
+                </button>
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={() => {
+                    resetForm();
+                    setShowModal(false);
+                  }}
                 >
-                    <option value="All">All</option>
-                    <option value="electronics">Electronics</option>
-                    <option value="mobiles">Mobiles</option>
-                    <option value="fashion">Fashion</option>
-                </select>
-            </div>
-            <Table striped bordered hover variant="dark">
-                <thead>
-                    <tr>
-                        <th width="200">Product Name</th>
-                        {flagManufacturer && <th width="100">Manufacturer</th>}
-                        {flagPrice && <th width="100">Price</th>}
-                        {flagQuantity && <th width="100">Quantity</th>}
-                        <th width="200">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {products
-                        .filter((obj) =>
-                            obj.name.toLowerCase().includes(searchKey.toLowerCase())
-                        )
-                        .filter((obj) =>
-                            filterType === "All"
-                                ? true
-                                : obj.category.toLowerCase() === filterType.toLowerCase()
-                        )
-                        .map((product, index) => (
-                            <tr key={index}>
-                                <td>{product.name}</td>
-                                {flagManufacturer && <td>{product.manufacturer}</td>}
-                                {flagPrice && <td>{product.price}</td>}
-                                {flagQuantity && <td>{product.quantity}</td>}
-                                <td>
-                                    <Button
-                                        variant="primary"
-                                        onClick={() => navigate(`/product/${product.id}`)}
-                                    >
-                                        View
-                                    </Button>
-                                    <Button variant="warning" onClick={() => editHandler(product)}>
-                                        Edit
-                                    </Button>
-                                    <Button
-                                        variant="danger"
-                                        onClick={() => deleteProduct(product)}
-                                    >
-                                        Delete
-                                    </Button>
-                                </td>
-                            </tr>
-                        ))}
-                </tbody>
-            </Table>
-            <Modal show={show} onHide={handleClose}>
-                <Modal.Header closeButton>
-                    <Modal.Title>{add ? "Add Product" : "Edit Product"}</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <div className="register-form">
-                        <label htmlFor="name">Name</label>
-                        <input
-                            type="text"
-                            value={product.name}
-                            className="form-control"
-                            placeholder="Name"
-                            onChange={(e) =>
-                                setProduct({ ...product, name: e.target.value })
-                            }
-                            required
-                        />
-                        <br />
-                        <label htmlFor="description">Description</label>
-                        <input
-                            type="text"
-                            value={product.description}
-                            className="form-control"
-                            placeholder="Description"
-                            onChange={(e) =>
-                                setProduct({ ...product, description: e.target.value })
-                            }
-                            required
-                        />
-                        <br />
-                        <label htmlFor="manufacturer">Manufacturer</label>
-                        <input
-                            type="text"
-                            value={product.manufacturer}
-                            className="form-control"
-                            placeholder="Manufacturer"
-                            onChange={(e) =>
-                                setProduct({ ...product, manufacturer: e.target.value })
-                            }
-                            required
-                        />
-                        <br />
-                        <label htmlFor="price">Price</label>
-                        <input
-                            type="number"
-                            value={product.price}
-                            className="form-control"
-                            placeholder="Price"
-                            onChange={(e) =>
-                                setProduct({ ...product, price: e.target.value })
-                            }
-                            required
-                        />
-                        <br />
-                        <label htmlFor="quantity">Quantity</label>
-                        <input
-                            type="number"
-                            value={product.quantity}
-                            className="form-control"
-                            placeholder="Quantity"
-                            onChange={(e) =>
-                                setProduct({ ...product, quantity: e.target.value })
-                            }
-                            required
-                        />
-                        <br />
-                        <label htmlFor="url">Image URL</label>
-                        <input
-                            type="text"
-                            value={product.imageURL}
-                            className="form-control"
-                            placeholder="Image URL"
-                            onChange={(e) =>
-                                setProduct({ ...product, imageURL: e.target.value })
-                            }
-                            required
-                        />
-                        <br />
-                        <label htmlFor="category">Category</label>
-                        <select
-                            className="form-control"
-                            required
-                            value={product.category}
-                            onChange={(e) =>
-                                setProduct({ ...product, category: e.target.value })
-                            }
-                        >
-                            <option value="">Select one option</option>
-                            <option value="electronics">Electronics</option>
-                            <option value="mobiles">Mobiles</option>
-                            <option value="fashion">Fashion</option>
-                        </select>
-                        <br />
-                    </div>
-                </Modal.Body>
-                <Modal.Footer>
-                    <button onClick={handleClose}>Close</button>
-                    {add ? (
-                        <button type="submit" onClick={addProduct}>
-                            SAVE
-                        </button>
-                    ) : (
-                        <button type="submit" onClick={updateProduct}>
-                            SAVE
-                        </button>
-                    )}
-                </Modal.Footer>
-            </Modal>
-            {customization && (
-                <FormControl component="fieldset">
-                    <FormLabel component="legend">Customization of Viewing Products</FormLabel>
-                    <FormGroup aria-label="position" row>
-                        <FormControlLabel
-                            value="start"
-                            control={<Checkbox />}
-                            label="Image"
-                            labelPlacement="start"
-                            checked={flagImage}
-                            onChange={handleFlagImage}
-                        />
-                        <FormControlLabel
-                            value="start"
-                            control={<Checkbox />}
-                            label="Manufacturer"
-                            labelPlacement="start"
-                            checked={flagManufacturer}
-                            onChange={handleFlagManufacturer}
-                        />
-                        <FormControlLabel
-                            value="start"
-                            control={<Checkbox />}
-                            label="Price"
-                            labelPlacement="start"
-                            checked={flagPrice}
-                            onChange={handleFlagPrice}
-                        />
-                        <FormControlLabel
-                            value="start"
-                            control={<Checkbox />}
-                            label="Quantity"
-                            labelPlacement="start"
-                            checked={flagQuantity}
-                            onChange={handleFlagQuantity}
-                        />
-                    </FormGroup>
-                </FormControl>
-            )}
-        </Layout>
-    );
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default InventoryManagement;

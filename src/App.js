@@ -1,86 +1,67 @@
-import React, { Component, lazy, Suspense } from 'react';
-import { Route, BrowserRouter, Routes } from 'react-router-dom';
-import HomePage from './components/HomePage';
-import LoginPage from './components/LoginPage';
-import RegistrationPage from './components/RegistrationPage';
-import './App.css';
-import 'react-toastify/dist/ReactToastify.css';
-import { ToastContainer } from 'react-toastify';
-import InventoryManagement from './components/InventoryManagement';
-import { Navigate } from 'react-router-dom';
-import ChartComp from './components/ChartComp';
-import "./cssStylesheets/auth.css"
-import "./cssStylesheets/layout.css"
-import "./cssStylesheets/products.css"
-const ProductInformation = lazy(() => import('./components/ProductInformation'));
-const UserDetails = lazy(() => import('./components/UserDetails'));
-const About = lazy(() => import('./components/About'));
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import HomePage from "./components/HomePage";
+import LoginPage from "./components/LoginPage";
+import RegistrationPage from "./components/RegistrationPage";
+import ProductInformation from "./components/ProductInformation";
+import UserDetails from "./components/UserDetails";
+import ChartComp from "./components/ChartComp";
+import InventoryManagement from "./components/InventoryManagement";
+import NotFoundPage from "./components/NotFoundPage";
+import HeaderNavBar from "./components/HeaderNavBar";
+import Footer from "./components/Footer";
+import PrivateRoute from "./components/PrivateRoute";
+import AboutPage from "./components/AboutPage";
 
-
-class App extends Component {
-  render() {
-    return (
-      <div className="app">
-        <ToastContainer />
-        <BrowserRouter>
-          <Suspense fallback={<div>Loading...</div>}>
-            <Routes>
-              <Route exact path="/" element={<HomePage />} />
-              <Route exact path="/login" element={<LoginPage />} />
-              <Route exact path="/signup" element={<RegistrationPage />} />
-              <Route
-                exact
-                path="/products"
-                element={
-                  <ProtectedRoutes>
-                    <InventoryManagement />
-                  </ProtectedRoutes>
-                }
-              />
-              <Route
-                exact
-                path="/product/:id"
-                element={
-                  <ProtectedRoutes>
-                    <ProductInformation />
-                  </ProtectedRoutes>
-                }
-              />
-              <Route
-                exact
-                path="/userDetails"
-                element={
-                  <ProtectedRoutes>
-                    <UserDetails />
-                  </ProtectedRoutes>
-                }
-              />
-              <Route
-                exact
-                path="/chart"
-                element={
-                  <ProtectedRoutes>
-                    <ChartComp />
-                  </ProtectedRoutes>
-                }
-              />
-              <Route exact path="/about" element={<About />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </div>
-    );
-  }
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <HeaderNavBar />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegistrationPage />} />
+          <Route
+            path="/product/:id"
+            element={
+              <PrivateRoute>
+                <ProductInformation />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <UserDetails />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/charts"
+            element={
+              <PrivateRoute>
+                <ChartComp />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/inventory"
+            element={
+              <PrivateRoute>
+                <InventoryManagement />
+              </PrivateRoute>
+            }
+          />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+        <Footer />
+      </Router>
+    </AuthProvider>
+  );
 }
 
 export default App;
-
-export const ProtectedRoutes = ({ children }) => {
-  if (localStorage.getItem('currentUser')) {
-    return children;
-  } else {
-    return <Navigate to="/login" />;
-  }
-};
-
-

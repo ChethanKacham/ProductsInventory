@@ -1,10 +1,11 @@
 import React from "react";
+import "../styles/Footer.css";
 
 function Footer() {
   return (
-    <div className="footer">
-      &copy; Chethan Kacham
-    </div>
+    <footer className="footer">
+      <p>&copy; {new Date().getFullYear()} Chethan Kacham. All rights reserved.</p>
+    </footer>
   );
 }
 

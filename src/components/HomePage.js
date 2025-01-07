@@ -1,123 +1,152 @@
-import React, { useState, useEffect } from 'react';
-import Layout from './Layout';
-import { collection, addDoc, getDocs } from "firebase/firestore";
-import { fireDB, auth } from "../firebaseConfig";
+import React, { useEffect, useState } from "react";
+import { collection, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import productList from "../productsList";
+import { fireDB } from "../firebaseConfig";
+import SearchBar from "./SearchBar";
+import "../styles/HomePage.css";
+import Loader from "./Loader";
 
 function HomePage() {
-    const [products, setProducts] = useState([]);
-    const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
-    const [searchKey, setSearchKey] = useState("");
-    const [filterType, setFilterType] = useState("");
+  const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        getData();
-    }, []);
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
-    async function getData() {
-        try {
-            setLoading(true);
-            const products1 = await getDocs(collection(fireDB, "products"));
-            const productArray = [];
-            products1.forEach((doc) => {
-                const obj = {
-                    id: doc.id,
-                    ...doc.data(),
-                };
-                productArray.push(obj);
-            });
-            setProducts(productArray);
-            setLoading(false);
-        } catch (error) {
-            console.log(error);
-            setLoading(false);
-        }
+  useEffect(() => {
+    filterAndSearchProducts();
+  }, [searchTerm]);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const querySnapshot = await getDocs(collection(fireDB, "products"));
+      const productArray = [];
+      querySnapshot.forEach((doc) => {
+        productArray.push({ id: doc.id, ...doc.data() });
+      });
+      setProducts(productArray);
+      setFilteredProducts(productArray);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setLoading(false);
+    }
+  };
+
+  const filterAndSearchProducts = (filters = {}) => {
+    let tempProducts = products;
+
+    // Search by Name
+    if (searchTerm) {
+      tempProducts = tempProducts.filter((product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
-    /*
-    function addProductsData() {
-        productList.map(async (product) => {
-            try {
-                await addDoc(collection(fireDB, "products"), product);
-            } catch (error) {
-                console.log(error);
-            }
+    // Filter by Category
+    if (filters.category) {
+      tempProducts = tempProducts.filter(
+        (product) => product.category === filters.category
+      );
+    }
+
+    // Filter by Price Range
+    if (filters.minPrice) {
+      tempProducts = tempProducts.filter(
+        (product) => product.price >= parseInt(filters.minPrice)
+      );
+    }
+    if (filters.maxPrice) {
+      tempProducts = tempProducts.filter(
+        (product) => product.price <= parseInt(filters.maxPrice)
+      );
+    }
+
+    setFilteredProducts(tempProducts);
+  };
+
+  const handleSort = (sortBy) => {
+    const sortedProducts = [...filteredProducts];
+
+    if (sortBy === "name-asc") {
+      sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === "name-desc") {
+      sortedProducts.sort((a, b) => b.name.localeCompare(a.name));
+    } else if (sortBy === "price-asc") {
+      sortedProducts.sort((a, b) => a.price - b.price);
+    } else if (sortBy === "price-desc") {
+      sortedProducts.sort((a, b) => b.price - a.price);
+    }
+
+    setFilteredProducts(sortedProducts);
+  };
+
+  const handleFilter = (filters) => {
+    filterAndSearchProducts(filters);
+  };
+
+  const incrementProductView = async (productId) => {
+    try {
+      const productRef = doc(fireDB, "products", productId);
+      const productSnapshot = await getDoc(productRef);
+  
+      if (productSnapshot.exists()) {
+        const currentCount = productSnapshot.data().count || 0;
+        await updateDoc(productRef, {
+          count: currentCount + 1,
         });
+        console.log(`Product view count updated for ID: ${productId}`);
+      }
+    } catch (error) {
+      console.error("Error updating product view count:", error);
     }
-    */
+  };
 
-    return (
-        <Layout loading={loading}>
-            <div className="container">
-                <div className="d-flex align-items-center my-3 justify-content-center">
-                    <label className="mt-3">Search</label>
-                    <input
-                        type="text"
-                        value={searchKey}
-                        onChange={(e) => {
-                            setSearchKey(e.target.value);
-                        }}
-                        className="form-control mx-2"
-                        placeholder="Search"
-                    />
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    <label className="mt-3">Category</label>
-                    &nbsp;&nbsp;&nbsp;
-                    <select
-                        className="form-control mt-3"
-                        value={filterType}
-                        onChange={(e) => {
-                            setFilterType(e.target.value);
-                        }}
-                    >
-                        <option value="all">All</option>
-                        <option value="electronics">Electronics</option>
-                        <option value="mobiles">Mobiles</option>
-                        <option value="fashion">Fashion</option>
-                    </select>
-                </div>
-                <div className="row">
-                    {products
-                        .filter((obj) => obj.name.toLowerCase().includes(searchKey))
-                        .filter((obj) =>
-                            obj.category.toLowerCase().includes(filterType)
-                        )
-                        .map((product) => {
-                            return (
-                                <div className="col-md-4" key={product.id}>
-                                    <div className="m-2 p-1 product position-relative">
-                                        <div className="product-content">
-                                            <p>{product.name}</p>
-                                            <div className="text-center">
-                                                <img
-                                                    src={product.imageURL}
-                                                    alt=""
-                                                    className="product-img"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="product-actions">
-                                            <h2>{product.price} RS /-</h2>
-                                            <div className="d-flex">
-                                                <button
-                                                    onClick={() => {
-                                                        navigate(`/product/${product.id}`);
-                                                    }}
-                                                >
-                                                    View
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                </div>
-            </div>
-        </Layout>
-    );
+  const handleViewDetails = (productId) => {
+    incrementProductView(productId);
+    navigate(`/product/${productId}`);
+  };
+
+  return (
+    <div className="homepage">
+      {loading ? (
+        <Loader />
+      ) : (
+        <div className="container">
+          <SearchBar
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            handleSort={handleSort}
+            handleFilter={handleFilter}
+          />
+          <div className="product-grid">
+            {filteredProducts.map((product) => (
+              <div key={product.id} className="product-card">
+                <img
+                  src={product.imageURL}
+                  alt={product.name}
+                  className="product-image"
+                />
+                <h3 className="product-name">{product.name}</h3>
+                <p className="product-price">₹{product.price}</p>
+                <button
+                  className="view-details"
+                  onClick={() => handleViewDetails(product.id)}
+                >
+                  View Details
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default HomePage;

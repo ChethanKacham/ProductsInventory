@@ -1,38 +1,114 @@
-.App {
+/* Global styles */
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f9;
+  color: #333;
+}
+
+a {
+  text-decoration: none;
+  color: #003f5c;
+  font-weight: bold;
+}
+
+a:hover {
+  color: #ff6f61;
+}
+
+/* Navbar styles */
+.navbar {
+  background-color: #003f5c !important;
+  color: #fff;
+  padding: 10px 20px;
+}
+
+.navbar a {
+  color: #fff !important;
+  margin-right: 15px;
+}
+
+.navbar a:hover {
+  color: #ff6f61 !important;
+}
+
+/* Footer styles */
+.footer {
+  background-color: #003f5c;
+  color: #fff;
+  padding: 10px;
   text-align: center;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Button styles */
+button {
+  background-color: #003f5c;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+button:hover {
+  background-color: #ff6f61;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+/* Forms */
+form input, form select {
+  margin: 10px 0;
+  padding: 8px;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+form button {
+  width: 100%;
+}
+
+/* Cards */
+.card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  background-color: #fff;
+  margin-bottom: 20px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Charts */
+.chart-container {
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Loader */
+.loader {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  align-items: center;
+  height: 100vh;
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    align-items: center;
   }
-  to {
-    transform: rotate(360deg);
+
+  .navbar a {
+    margin: 5px 0;
+  }
+
+  .footer {
+    font-size: 14px;
   }
 }

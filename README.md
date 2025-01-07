@@ -1,70 +1,129 @@
-# Getting Started with Create React App
+# **Products Inventory Application**
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A user-friendly inventory management system that allows users to efficiently manage their products with features like adding, editing, and deleting products, viewing details, and generating insightful charts.
+
+## **Features**
+- **User Authentication**:
+  - Secure login and registration using Firebase Authentication.
+- **Inventory Management**:
+  - Add, edit, and delete products.
+  - View product details.
+- **Data Visualization**:
+  - Analyze product views and sales trends with dynamic charts using Chart.js.
+- **Responsive Design**:
+  - Fully optimized for mobile, tablet, and desktop devices.
+- **Role-Based Access**:
+  - Private routes ensure only authenticated users can access sensitive pages.
+
+---
+
+## **Getting Started**
+
+### **Prerequisites**
+- **Node.js** (>=16.x)
+- **npm** (>=7.x)
+- A Firebase project with Firestore and Authentication enabled.
+
+---
+
+### **Installation**
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ChethanKacham/ProductsInventory.git
+   cd ProductsInventory
+
+2. Install dependencies:
+   ```bash
+   npm install
+
+3. Configure Firebase:
+   - Replace the firebaseConfig object in firebaseConfig.js with your Firebase project details:
+   ```bash
+   const firebaseConfig = {
+   apiKey: "your-api-key",
+   authDomain: "your-auth-domain",
+   projectId: "your-project-id",
+   storageBucket: "your-storage-bucket",
+   messagingSenderId: "your-messaging-sender-id",
+   appId: "your-app-id"
+   };
+
+4. Start the development server:
+   ```bash
+   npm start
+
+---
+
+## Features by Component
+
+### Authentication
+  - **LoginPage.js**:
+    - Allows users to log in using Firebase Authentication.
+  - **RegistrationPage.js**:
+    - Handles user registration with validation.
+
+### Inventory Management
+  - **InventoryManagement.js**:
+    - Add, edit, delete, and view products.
+    - Displays products in a responsive table with modals for product management.
+
+### User Profile
+  - **UserDetails.js**:
+    - Displays the logged-in user’s details.
+
+### Charts
+  - **ChartComp.js**:
+    - Visualizes product views and sales trends.
+
+### Static Pages
+  - **AboutPage.js**:
+    - Describes the purpose and features of the application.
+
+---
+
+## Built With
+  - **React.js**: Frontend library for building UI components.
+  - **Firebase**:
+    - **Firestore**: For storing product and user data.
+    - **Authentication**: For secure login and registration.
+  - **Chart.js**: For visualizing product analytics.
+  - **React Testing Library**: For writing unit tests.
+  - **CSS**: For responsive design and styling.
+
+---
 
 ## Available Scripts
 
-In the project directory, you can run:
+1. **Start the development server**:
+   ```bash
+   npm start
 
-### `npm start`
+2. **Run tests**:
+   ```bash
+   npm test
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+3. **Build for production**:
+   ```bash
+   npm run build
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+4. **Eject the configuration**:
+   ```bash
+   npm run eject
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Testing
 
-### `npm run build`
+This project includes unit tests written using **React Testing Library** and **Jest**.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Included Test Suites
+1. **AboutPage.test.js**:
+   - Tests rendering and content of the About page.
+2. **InventoryManagement.test.js**:
+   - Covers adding, editing, and deleting products.
+3. **LoginPage.test.js**:
+   - Validates login functionality and error handling.
+4. **RegistrationPage.test.js**:
+   - Tests registration form validation and user creation.
+5. **App.test.js**:
+   - Snapshot testing and route verification.

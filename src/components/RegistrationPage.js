@@ -1,197 +1,149 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
+import { useNavigate } from "react-router-dom";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { toast } from "react-toastify";
-import { collection, setDoc, doc } from "firebase/firestore";
-import { fireDB, auth } from "../firebaseConfig";
+import { collection, doc, setDoc } from "firebase/firestore";
+import { fireDB } from "../firebaseConfig";
+import "../styles/RegistrationPage.css";
 import Loader from "./Loader";
 
 function RegistrationPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstname, setFirstname] = useState("");
+  const [lastname, setLastname] = useState("");
+  const [location, setLocation] = useState("");
+  const [mobilenumber, setMobilenumber] = useState("");
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const auth = getAuth();
   const navigate = useNavigate();
+  const auth = getAuth();
 
-  const initialValues = {
-    email: "",
-    password: "",
-    firstname: "",
-    lastname: "",
-    location: "",
-    mobilenumber: "",
+  const validateFields = () => {
+    const newErrors = {};
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/; // At least 8 characters, one letter, one number
+    const mobileRegex = /^[0-9]{10}$/; // Exactly 10 digits
+
+    if (!firstname.trim()) newErrors.firstname = "First name is required.";
+    if (!lastname.trim()) newErrors.lastname = "Last name is required.";
+    if (!email.trim() || !email.includes("@"))
+      newErrors.email = "Valid email is required.";
+    if (!passwordRegex.test(password))
+      newErrors.password =
+        "Password must be at least 8 characters and include a letter and a number.";
+    if (!mobileRegex.test(mobilenumber))
+      newErrors.mobilenumber = "Mobile number must be exactly 10 digits.";
+    if (!location.trim()) newErrors.location = "Location is required.";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0; // Return true if no errors
   };
 
-  const phoneExp = /^(?:(?:\+|00)91|0)?[789]\d{9}$/;
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    if (!validateFields()) return; // Stop submission if validation fails
 
-  const validationSchema = Yup.object({
-    email: Yup.string().required("Required").email("Email is invalid"),
-    password: Yup.string()
-      .required("Required")
-      .min(8, "Minimum 8 characters"),
-    firstname: Yup.string()
-      .max(15, "Must be 15 characters or less")
-      .required("Required"),
-    lastname: Yup.string()
-      .max(20, "Must be 20 characters or less")
-      .required("Required"),
-    location: Yup.string().required("Required"),
-    mobilenumber: Yup.string()
-      .matches(phoneExp, "Phone number is not valid")
-      .required("Required"),
-  });
-
-  const register = async (email, password, firstname, lastname, location, mobilenumber) => {
     try {
       setLoading(true);
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-      await setDoc(doc(collection(fireDB, "users"), result.user.uid), {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Check if Firestore record exists (just for completeness)
+      await setDoc(doc(fireDB, "users", user.uid), {
         email,
-        password,
         firstname,
         lastname,
         location,
         mobilenumber,
       });
-      console.log(result);
+
       setLoading(false);
-      toast.success("Registration successful");
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
+      alert("Registration successful! Please log in.");
+      navigate("/login");
     } catch (error) {
-      console.log(error);
-      toast.error("Registration failed");
       setLoading(false);
+
+      // Handle Firebase Auth Errors
+      if (error.code === "auth/email-already-in-use") {
+        alert(
+          "An account with this email already exists in Firebase Authentication. Please log in or contact support."
+        );
+      } else if (error.code === "auth/weak-password") {
+        alert("Password is too weak. Please use a stronger password.");
+      } else {
+        console.error("Error registering user:", error.message);
+        alert("Failed to register. Please try again.");
+      }
     }
   };
 
-  const onSubmit = async (values) => {
-    register(
-      values.email,
-      values.password,
-      values.firstname,
-      values.lastname,
-      values.location,
-      values.mobilenumber
-    );
-    console.log(values);
-  };
-
   return (
-    <div className="register-parent">
+    <div className="registration-page">
       {loading && <Loader />}
-      <div className="register-top"></div>
-      <div className="row justify-content-center">
-        <div className="col-md-4 z1">
-          <div className="register-form">
-            <h2>Register</h2>
-            <hr />
-            <Formik
-              initialValues={initialValues}
-              validationSchema={validationSchema}
-              onSubmit={onSubmit}
-            >
-              {({ error }) => (
-                <Form>
-                  <label htmlFor="email">Email ID</label>
-                  <Field
-                    className="form-control"
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="Email"
-                  />
-                  <ErrorMessage name="email">
-                    {(error) => <div className="error">{error}</div>}
-                  </ErrorMessage>
+      <div className="registration-container">
+        <h2 className="registration-title">Register</h2>
+        <form onSubmit={handleRegister} noValidate>
+          <input
+            type="text"
+            placeholder="First Name"
+            value={firstname}
+            onChange={(e) => setFirstname(e.target.value)}
+            className={`registration-input ${errors.firstname ? "error-input" : ""}`}
+          />
+          {errors.firstname && <p className="error-text">{errors.firstname}</p>}
 
-                  <label htmlFor="password">Password</label>
-                  <Field
-                    className="form-control"
-                    type="password"
-                    id="password"
-                    name="password"
-                    placeholder="Password"
-                  />
-                  <ErrorMessage name="password">
-                    {(error) => <div className="error">{error}</div>}
-                  </ErrorMessage>
+          <input
+            type="text"
+            placeholder="Last Name"
+            value={lastname}
+            onChange={(e) => setLastname(e.target.value)}
+            className={`registration-input ${errors.lastname ? "error-input" : ""}`}
+          />
+          {errors.lastname && <p className="error-text">{errors.lastname}</p>}
 
-                  <label htmlFor="firstname">First Name</label>
-                  <Field
-                    className="form-control"
-                    type="text"
-                    id="firstname"
-                    name="firstname"
-                    placeholder="First Name"
-                  />
-                  <ErrorMessage name="firstname">
-                    {(error) => <div className="error">{error}</div>}
-                  </ErrorMessage>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={`registration-input ${errors.email ? "error-input" : ""}`}
+          />
+          {errors.email && <p className="error-text">{errors.email}</p>}
 
-                  <label htmlFor="lastname">Last Name</label>
-                  <Field
-                    className="form-control"
-                    type="text"
-                    id="lastname"
-                    name="lastname"
-                    placeholder="Last Name"
-                  />
-                  <ErrorMessage name="lastname">
-                    {(error) => <div className="error">{error}</div>}
-                  </ErrorMessage>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={`registration-input ${errors.password ? "error-input" : ""}`}
+          />
+          {errors.password && <p className="error-text">{errors.password}</p>}
 
-                  <label htmlFor="location">Location</label>
-                  <Field
-                    className="form-control"
-                    type="text"
-                    id="location"
-                    name="location"
-                    placeholder="Location"
-                  />
-                  <ErrorMessage name="location">
-                    {(error) => <div className="error">{error}</div>}
-                  </ErrorMessage>
+          <input
+            type="text"
+            placeholder="Mobile Number"
+            value={mobilenumber}
+            onChange={(e) => setMobilenumber(e.target.value)}
+            className={`registration-input ${errors.mobilenumber ? "error-input" : ""}`}
+          />
+          {errors.mobilenumber && <p className="error-text">{errors.mobilenumber}</p>}
 
-                  <label htmlFor="mobilenumber">Mobile Number</label>
-                  <Field
-                    className="form-control"
-                    type="text"
-                    id="mobilenumber"
-                    name="mobilenumber"
-                    placeholder="Mobile number"
-                  />
-                  <ErrorMessage name="mobilenumber">
-                    {(error) => <div className="error">{error}</div>}
-                  </ErrorMessage>
+          <input
+            type="text"
+            placeholder="Location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className={`registration-input ${errors.location ? "error-input" : ""}`}
+          />
+          {errors.location && <p className="error-text">{errors.location}</p>}
 
-                  <div align="center">
-                    <button className="m-2" type="submit">
-                      Register
-                    </button>
-                    <button className="m-2" type="reset">
-                      Reset
-                    </button>
-                  </div>
-                </Form>
-              )}
-            </Formik>
-
-            <Link to="/login">Click Here To Login</Link>
-            <br />
-            <Link to="/">Click Here for Home Page</Link>
-          </div>
-        </div>
-        <div className="col-md-5">
-          <lottie-player
-            src="https://assets10.lottiefiles.com/packages/lf20_my6hfrzr.json"
-            background="transparent"
-            speed="1"
-            loop
-            autoplay
-          ></lottie-player>
-        </div>
+          <button type="submit" className="registration-button">
+            Register
+          </button>
+        </form>
+        <p className="login-link">
+          Already have an account?{" "}
+          <span onClick={() => navigate("/login")}>Login here</span>
+        </p>
       </div>
     </div>
   );
